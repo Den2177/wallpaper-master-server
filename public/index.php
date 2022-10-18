@@ -1,6 +1,5 @@
 <?php
 // Forward Vercel requests to normal index.php
-require __DIR__ . '/../public/index.php';
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
