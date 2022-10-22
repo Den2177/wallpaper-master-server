@@ -41,7 +41,6 @@ Route::middleware(ApiToken::class)->group(function() {
     Route::get('/statistic/{user}', [StatisticController::class, 'index']);
     Route::get('/my-statistic', [StatisticController::class, 'getMyStatistic']);
     Route::get('/liked', [ImageController::class, 'indexLiked']);
-
 });
 
 

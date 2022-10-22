@@ -13,6 +13,7 @@ class Image extends Model
 
     protected $guarded = false;
     protected $table = 'images';
+    static public $imagesPerOneLoad = 9;
 
     public function user()
     {
@@ -26,12 +27,12 @@ class Image extends Model
 
     public function getPath()
     {
-        return public_path(preg_replace("/http:\/\/.+?\//", "", $this->url));
+        return public_path(preg_replace("/http(s{0,1}):\/\/.+?\//", "", $this->url));
     }
 
     public function getName()
     {
-        return preg_replace("/http:\/\/.+?\/images\//", "", $this->url);
+        return preg_replace("/http(s{0,1}):\/\/.+?\/images\//", "", $this->url);
     }
 
     public function toggleLike()
@@ -64,13 +65,13 @@ class Image extends Model
         return $this->belongsToMany(User::class, 'image_likes', 'image_id', 'user_id');
     }
 
-    public static function getTopImages($name)
+    public static function getTopImages($name, $offset)
     {
         $imagesByName = Image::where('name', 'like', "%$name%")->get();
         $imagesByTags = collect([]);
         $imagesByTagsIds = [];
 
-        $tags =  Tag::query()->where('name', 'like', "%$name%")->get();
+        $tags = Tag::query()->where('name', 'like', "%$name%")->get();
 
         foreach ($tags as $tag) {
             $tagImages = $tag->images;
@@ -83,11 +84,13 @@ class Image extends Model
             }
         }
 
-        return $imagesByName->merge($imagesByTags);
+        $resultCollection = $imagesByName->merge($imagesByTags);
+
+        return $resultCollection->splice($offset, Image::$imagesPerOneLoad);
     }
 
-    public static function getLiked()
+    public static function getLiked($offset)
     {
-        return Auth::user()->likedImages()->orderByDesc('created_at')->get();
+        return Auth::user()->likedImages()->offset($offset)->limit(Image::$imagesPerOneLoad)->orderByDesc('created_at')->get();
     }
 }

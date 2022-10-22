@@ -12,27 +12,43 @@ use Illuminate\Support\Str;
 
 class ImageController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return ImageResource::collection(Auth::user()->images()->orderByDesc('created_at')->get());
+        $offset = $request->input('offset');
+        if (!$offset) $offset = 0;
+
+        return ImageResource::collection(Auth::user()->images()
+            ->offset($offset)->limit(Image::$imagesPerOneLoad)
+            ->orderByDesc('created_at')->get());
     }
 
-    public function getRecommendedImages()
+    public function getRecommendedImages(Request $request)
     {
-        $images = Image::all();
+        $offset = $request->input('offset');
+
+        if (!$offset) $offset = 0;
+
+        $images = Image::query()->offset($offset)->limit(Image::$imagesPerOneLoad)->get();
+
         return ImageResource::collection($images);
     }
 
-    public function getUserImages(User $user)
+    public function getUserImages(Request $request, User $user)
     {
-        return ImageResource::collection($user->images);
+        $offset = $request->input('offset');
+        if (!$offset) $offset = 0;
+
+        return ImageResource::collection($user->images()->offset($offset)->limit(Image::$imagesPerOneLoad)->get());
     }
 
     public function getTopImages(Request $request)
     {
+        $offset = $request->input('offset');
+        if (!$offset) $offset = 0;
+
         $name = $request->input('name');
 
-        return ImageResource::collection(Image::getTopImages($name));
+        return ImageResource::collection(Image::getTopImages($name, $offset));
     }
 
     public function store(Request $request)
@@ -41,8 +57,8 @@ class ImageController extends Controller
 
         $validator = validator($data, [
             'image' => 'required|image|mimes:png,jpg,jpeg|dimensions:min_width=200,min_height=200',
-            'name' => 'string',
-            'tags' => 'array',
+            'name' => 'nullable|string',
+            'tags' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -115,8 +131,13 @@ class ImageController extends Controller
         );
     }
 
-    public function indexLiked()
+    public function indexLiked(Request $request)
     {
-        return ImageResource::collection(Image::getLiked());
+        $offset = $request->input('offset');
+
+        if (!$offset) {
+            $offset = 0;
+        }
+        return ImageResource::collection(Image::getLiked($offset));
     }
 }
